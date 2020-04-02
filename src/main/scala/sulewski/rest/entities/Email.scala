@@ -1,21 +1,14 @@
 package sulewski.rest.entities
 
-case class Email(email: String, domain: String = "gmail.com") {
-  override def toString: String = {
-    s"$email@$domain"
-  }
-  def fromString(emailAsString: Option[String]): Option[Email] =
-    emailAsString match {
-      case Some(emailString) =>
-        val parts = emailString.split("@")
+import cats.Eq
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
-        parts.lastOption match {
-          case Some(someDomain) =>
-            parts.headOption.map(
-              Email(_, someDomain)
-            )
-          case None => None
-        }
-      case None => None
-    }
+case class Email(email: String, domain: String = "gmail.com")
+
+
+object Email {
+  implicit val emailDecoder: Decoder[Email] = deriveDecoder[Email]
+  implicit val emailEncoder: Encoder[Email] = deriveEncoder[Email]
+  implicit val emailEq: Eq[Email]           = Eq.fromUniversalEquals[Email]
 }

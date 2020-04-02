@@ -1,5 +1,5 @@
 resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/"
-resolvers += "Iota" at "https://github.com/thebusby/iota"
+resolvers += "Iota" at "http://clojars.org/repo/"
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.6")
 
