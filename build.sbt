@@ -25,6 +25,7 @@ libraryDependencies ++= Seq(
   "io.circe"                   %% "circe-generic-extras" % circeRevision,
   "ch.qos.logback"             % "logback-classic"       % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging"        % "3.9.0",
+  "de.heikoseeberger"          %% "akka-http-circe"      % "1.21.0",
 
   "org.specs2"        %% "specs2-core"       % "4.2.0"      % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaRevision % Test

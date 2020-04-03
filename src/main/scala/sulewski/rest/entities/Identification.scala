@@ -9,9 +9,9 @@ case class Identification(id: String, randomAvatar: String = Identification.rand
 
 
 object Identification {
-  implicit val identificationDecoder: Decoder[Identification] = deriveDecoder[Identification]
-  implicit val identificationEncoder: Encoder[Identification] = deriveEncoder[Identification]
-  implicit val identificationEq: Eq[Identification]           = Eq.fromUniversalEquals[Identification]
+  //implicit val identificationDecoder: Decoder[Identification] = deriveDecoder[Identification]
+  //implicit val identificationEncoder: Encoder[Identification] = deriveEncoder[Identification]
+  //implicit val identificationEq: Eq[Identification]           = Eq.fromUniversalEquals[Identification]
 
   def rand: String = {
     "............."

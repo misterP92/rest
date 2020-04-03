@@ -1,18 +1,13 @@
 package sulewski.rest.entities
 
-import java.time.LocalDateTime
-
 import cats.Eq
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.generic.decoding.DerivedDecoder
-import io.circe.generic.encoding.DerivedObjectEncoder
 
-case class Endpoints(id: String,
-                     `web-space`: Option[String] = None,
-                     `subscription-type`: Option[String] = None,
-                     `register-date`: Option[LocalDateTime] = None,
-                     characteristics: Map[String, String] = Map.empty)
+case class Endpoints(pathBindings: List[String],
+                     ids: Seq[String] = Seq.empty,
+                     methods: Seq[String] = Seq.empty,
+                     body: Option[io.circe.Json] = None)
 
 object Endpoints {
   implicit val subscriptionEq: Eq[Endpoints]           = Eq.fromUniversalEquals[Endpoints]
