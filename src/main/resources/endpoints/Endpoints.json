@@ -1,0 +1,26 @@
+[
+  {
+    "pathBinding": "/dapi/v2/someRealPath",
+    "ids": [
+      "1234",
+      "5678",
+      "1133"
+    ],
+    "supportedMethods": [
+      "Get",
+      "Post"
+    ]
+  },
+  {
+    "pathBinding": "/hapi/v2/subscription/user",
+    "ids": [
+      "1234",
+      "5545",
+      "8888"
+    ],
+    "supportedMethods": [
+      "Get",
+      "Put"
+    ]
+  }
+]

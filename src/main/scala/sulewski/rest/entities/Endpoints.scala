@@ -4,10 +4,11 @@ import cats.Eq
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
-case class Endpoints(pathBindings: List[String],
-                     ids: Seq[String] = Seq.empty,
-                     methods: Seq[String] = Seq.empty,
-                     body: Option[io.circe.Json] = None)
+case class Endpoints(pathBinding: String,
+                     ids: Iterable[String],
+                     supportedMethods: Iterable[String]) {
+  def pathBindings: List[String] = List.empty
+}
 
 object Endpoints {
   implicit val subscriptionEq: Eq[Endpoints]           = Eq.fromUniversalEquals[Endpoints]

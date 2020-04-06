@@ -3,10 +3,11 @@ package sulewski.rest
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
-import akka.http.scaladsl.server.{ExceptionHandler, RejectionHandler}
 import akka.stream.ActorMaterializer
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import sulewski.rest.Main.logger
+import sulewski.rest.Server.ServerConfig
 import sulewski.rest.exceptions.InternalServerException
 import sulewski.rest.routes.{Handlers, Router}
 
@@ -16,15 +17,24 @@ import scala.util.{Failure, Success}
 object Server {
   private val StartingPoint: Int = 0
   private val MaxAmountOfRetry: Int = 3
-  def apply(router: Router, host: String, port: Int)(implicit system: ActorSystem, ec: ExecutionContext, mat: ActorMaterializer): Server = {
-    new Server(router, host, port)(system, ec, mat)
+  private val HostName: String = "host"
+  private val PortName: String = "port"
+
+  def apply(router: Router, config: ServerConfig)(implicit system: ActorSystem, ec: ExecutionContext, mat: ActorMaterializer): Server = {
+    new Server(router, config)(system, ec, mat)
+  }
+
+  final case class ServerConfig(host: String, port: Int)
+
+  object ServerConfig {
+    def apply(config: Config): ServerConfig = new ServerConfig(config.getString(HostName), config.getInt(PortName))
   }
 }
 
-class Server(router: Router, host: String, port: Int)(implicit system: ActorSystem, ec: ExecutionContext, mat: ActorMaterializer) extends LazyLogging {
+class Server(router: Router, config: Server.ServerConfig)(implicit system: ActorSystem, ec: ExecutionContext, mat: ActorMaterializer) extends LazyLogging {
   import Server._
 
-  def bind: Future[ServerBinding] = Http().bindAndHandle(router.route, host, port)
+  def bind: Future[ServerBinding] = Http().bindAndHandle(router.route, config.host, config.port)
 
   def bindWithRetry: Future[ServerBinding] = {
 
