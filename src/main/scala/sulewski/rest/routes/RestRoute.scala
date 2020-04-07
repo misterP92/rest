@@ -9,27 +9,24 @@ import scala.concurrent.ExecutionContext
 object RestRoute {
   private val Api: String = "api"
 
-  final case class MyConfig(fileName: String)
-  private object MyConfig {
+  final case class RouteConfig(fileName: String)
+  private object RouteConfig {
     val FileNameConfigName: String = "endpointPath"
+
+    def apply(config: Config): RouteConfig = new RouteConfig(config.getString(RouteConfig.FileNameConfigName))
   }
 
-  def apply(config: Config)(implicit ec: ExecutionContext): RestRoute = new RestRoute(config)
+  def apply(config: Config)(implicit ec: ExecutionContext): RestRoute = new RestRoute(RouteConfig(config))
 }
 
-class RestRoute(config: Config)(implicit ec: ExecutionContext) extends Router with Handlers {
+class RestRoute(config: RestRoute.RouteConfig)(implicit ec: ExecutionContext) extends Router with Handlers {
   import RestRoute._
-  private val currentConfig = extractConfig
 
-  private lazy val endpointRoutes: EndpointRoutes = new EndpointRoutes(currentConfig.fileName)
+  private lazy val endpointRoutes: EndpointRoutes = new EndpointRoutes(config.fileName)
 
   val route: Route = handleExceptions(exceptionHandle) {
     pathPrefix(Api) {
       endpointRoutes.route
     }
-  }
-
-  def extractConfig: MyConfig = {
-    MyConfig(fileName = config.getString(MyConfig.FileNameConfigName))
   }
 }

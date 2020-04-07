@@ -2,7 +2,7 @@ package sulewski.rest.routes
 
 import akka.http.scaladsl.server.{Directives, Route}
 import sulewski.rest.domain.EndpointApi
-import sulewski.rest.entities.Endpoints._
+import sulewski.rest.entities.RouteEndpoints._
 import sulewski.rest.exceptions.NotFoundException
 
 import scala.concurrent.ExecutionContext

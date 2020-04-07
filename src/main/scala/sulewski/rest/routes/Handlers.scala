@@ -13,24 +13,21 @@ trait Handlers {
     RejectionHandler.newBuilder
       .handleNotFound(
         complete(NotFound,
-          createErrorResponse(NotFoundException("Path does not exist")).toJson))
+          createErrorResponse(NotFoundException("Path does not exist"))))
       .result()
 
   implicit def exceptionHandle: ExceptionHandler =
     ExceptionHandler {
-      case e: NotFoundException =>
-        println(e.msg)
-        complete(StatusCodes.NotFound, createErrorResponse(e).toJson)
-      case e: BadRequestException =>
-        complete(StatusCodes.BadRequest, createErrorResponse(e).toJson)
-      case e: InternalServerException =>
-        complete(StatusCodes.InternalServerError, createErrorResponse(e).toJson)
+      case e: NotFoundException => complete(StatusCodes.NotFound, createErrorResponse(e))
+      case e: BadRequestException => complete(StatusCodes.BadRequest, createErrorResponse(e))
+      case e: InternalServerException => complete(StatusCodes.InternalServerError, createErrorResponse(e))
+      case e => complete(StatusCodes.InternalServerError, createErrorResponse(InternalServerException(e.getMessage)))
     }
 
-  def createErrorResponse[T <: RestEndpointException](exception: T): ErrorResponse = {
+  def createErrorResponse[T <: RestEndpointException](exception: T): io.circe.Json = {
     ErrorResponse(exception.statusCode.intValue().toString,
       exception.getClass.getSimpleName,
-      exception.msg)
+      exception.msg).toJson
   }
 
 }
