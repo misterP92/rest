@@ -9,13 +9,16 @@ resolvers += Resolver.typesafeIvyRepo("releases")
 resolvers += "Iota" at "http://clojars.org/repo/"
 
 val catsRevision = "1.1.0"
-val akkaRevision = "10.1.3"
+val akkaHttpRevision = "10.2.4"
 val circeRevision = "0.9.3"
+val akkaRevision = "2.6.6"
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka"          %% "akka-http"            % akkaRevision,
-  "com.typesafe.akka"          %% "akka-http-spray-json" % akkaRevision,
-  "com.typesafe.akka"          %% "akka-stream"          % "2.5.12",
+  "com.typesafe.akka"          %% "akka-http"            % akkaHttpRevision,
+  "com.typesafe.akka"          %% "akka-http-spray-json" % akkaHttpRevision,
+  "com.typesafe.akka"          %% "akka-stream"          % "2.5.12", 
+  "com.typesafe.akka"          %% "akka-stream"          % akkaRevision, 
+  "com.typesafe.akka"          %% "akka-actor-typed"     % akkaRevision,
   "org.typelevel"              %% "cats-core"            % catsRevision,
   "org.typelevel"              %% "cats-effect"          % catsRevision,
   "iota"                       %  "iota"                 % "1.1.3",
@@ -28,7 +31,7 @@ libraryDependencies ++= Seq(
   "de.heikoseeberger"          %% "akka-http-circe"      % "1.21.0",
 
   "org.specs2"        %% "specs2-core"       % "4.2.0"      % Test,
-  "com.typesafe.akka" %% "akka-http-testkit" % akkaRevision % Test
+  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpRevision % Test
 )
 
 

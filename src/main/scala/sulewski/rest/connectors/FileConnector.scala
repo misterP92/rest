@@ -14,4 +14,6 @@ trait FileConnector[T] {
   def readFileAsClass(path: Path)(implicit ec: ExecutionContext, dec: Decoder[T]): Future[Seq[T]]
 
   def readFileAsJson(path: Path)(implicit ec: ExecutionContext): Future[io.circe.Json]
+
+  def writeToFile(fileName: String, body: String)(implicit ec: ExecutionContext): Future[String]
 }

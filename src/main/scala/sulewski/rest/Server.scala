@@ -1,15 +1,13 @@
 package sulewski.rest
 
-import akka.actor.ActorSystem
+
+import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
-import akka.stream.ActorMaterializer
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import sulewski.rest.Main.logger
-import sulewski.rest.Server.ServerConfig
 import sulewski.rest.exceptions.InternalServerException
-import sulewski.rest.routes.{Handlers, Router}
+import sulewski.rest.routes.Router
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
@@ -20,8 +18,8 @@ object Server {
   private val HostName: String = "host"
   private val PortName: String = "port"
 
-  def apply(router: Router, config: ServerConfig)(implicit system: ActorSystem, ec: ExecutionContext, mat: ActorMaterializer): Server = {
-    new Server(router, config)(system, ec, mat)
+  def apply(router: Router, config: ServerConfig)(implicit system: ActorSystem[_], ec: ExecutionContext): Server = {
+    new Server(router, config)(system, ec)
   }
 
   final case class ServerConfig(host: String, port: Int)
@@ -31,10 +29,10 @@ object Server {
   }
 }
 
-class Server(router: Router, config: Server.ServerConfig)(implicit system: ActorSystem, ec: ExecutionContext, mat: ActorMaterializer) extends LazyLogging {
+class Server(router: Router, config: Server.ServerConfig)(implicit system: ActorSystem[_], ec: ExecutionContext) extends LazyLogging {
   import Server._
 
-  def bind: Future[ServerBinding] = Http().bindAndHandle(router.route, config.host, config.port)
+  def bind: Future[ServerBinding] = Http()(system).newServerAt(config.host, config.port).bindFlow(router.route)
 
   def bindWithRetry: Future[ServerBinding] = {
 
