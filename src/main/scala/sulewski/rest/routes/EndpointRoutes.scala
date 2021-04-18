@@ -17,6 +17,8 @@ import scala.concurrent.duration._
 object EndpointRoutes {
   private val EndpointName: String = "endpoint"
   private val EndPointNotAvailable: String = "Endpoint was not available for provided id"
+
+  def apply(fileName: String, underlyingLogic: ActorRef[EndpointApi.BaseCommand])(implicit ec: ExecutionContext, system: ActorSystem[_]): EndpointRoutes = new EndpointRoutes(fileName, underlyingLogic)
 }
 
 class EndpointRoutes(fileName: String, underlyingLogic: ActorRef[EndpointApi.BaseCommand])(implicit ec: ExecutionContext, system: ActorSystem[_]) extends Router with Directives {

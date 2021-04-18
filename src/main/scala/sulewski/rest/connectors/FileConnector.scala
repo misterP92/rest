@@ -11,7 +11,9 @@ object FileConnector {
 trait FileConnector[T] {
   import FileConnector._
 
-  def readFileAsClass(path: Path)(implicit ec: ExecutionContext, dec: Decoder[T]): Future[Seq[T]]
+  def readFileAsClass(path: Path)(implicit ec: ExecutionContext, dec: Decoder[T]): Future[Option[T]]
+
+  def readFileAsIterableClass(path: Path)(implicit ec: ExecutionContext, dec: Decoder[T]): Future[Seq[T]]
 
   def readFileAsJson(path: Path)(implicit ec: ExecutionContext): Future[io.circe.Json]
 

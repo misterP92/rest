@@ -25,13 +25,14 @@ object RestRoute {
 class RestRoute(config: RestRoute.RouteConfig, routes: Seq[RouteEndpoints], references: ActorReferences)(implicit ec: ExecutionContext, system: ActorSystem[_]) extends Router with Handlers {
   import RestRoute._
 
-  private lazy val endpointRoutes: EndpointRoutes = new EndpointRoutes(config.fileName, references.endpointRegistryActor)
-  private lazy val userRoutes: UserManagement = UserManagement(references.userRegistryActor)
+  private lazy val endpointRoutes: EndpointRoutes = EndpointRoutes(config.fileName, references.endpointRegistryActor)
+  private lazy val userLogsRoutes: UserManagement = UserManagement(references.userLogRegistryActor)
+  private lazy val serverInfoRoutes: ServerInfoRoutes = ServerInfoRoutes(references.serverInfoRegistryActor)
   private lazy val onDemandRoutes: OnDemandRouter = new OnDemandRouter(routes)
 
   val route: Route = handleExceptions(exceptionHandle) {
     pathPrefix(Api) {
-      endpointRoutes.route ~ userRoutes.route
+      endpointRoutes.route ~ userLogsRoutes.route ~ serverInfoRoutes.route
     } ~ onDemandRoutes.route
   }
 }

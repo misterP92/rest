@@ -1,12 +1,8 @@
 package sulewski.rest.domain
 
-import java.util.UUID
-
 import akka.actor.typed._
 import akka.actor.typed.scaladsl.Behaviors
-import akka.http.scaladsl.model.DateTime
 import sulewski.rest.connectors.FileOperator
-import sulewski.rest.domain.UserManagementApi.BaseLogCommand.{UserLogMultiResult, UserLogResult}
 import sulewski.rest.entities.{UserLog, UserLogCreation}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -38,10 +34,7 @@ object UserManagementApi {
     message match {
       case GetAllUserLogs(replyTo) =>
         context.pipeToSelf(userMgnApi.getAll(replyTo)){
-          case Success(value) =>
-            println("Done with get all")
-            println(value)
-            value
+          case Success(value) => value
           case Failure(exception) =>
             context.log.info(s"Rceived exception in [GetAllUsers] with message: ${exception.getMessage}", exception)
             NoUserLog(replyTo)
@@ -76,7 +69,6 @@ object UserManagementApi {
         Behaviors.same
 
       case UserLogMultiResult(users, replyTo) =>
-        println(s"INSIDE THE UserLogMultiResult with users:::     $users")
         replyTo ! UserLogReplaySeq(users)
         Behaviors.same
       case NoUserLog(replyTo) =>
@@ -89,21 +81,30 @@ object UserManagementApi {
 
 import io.circe.syntax._
 class UserManagementApi()(implicit ec: ExecutionContext) extends HttpApiAkka[UserManagementApi.BaseLogCommand, UserLogCreation, UserManagementApi.UserLogReplay] with FileOperator[UserLog] {
+  import UserManagementApi.BaseLogCommand._
   import UserManagementApi._
 
   override def get(id: String, replyTo: ActorRef[UserLogReplay]): Future[UserManagementApi.BaseLogCommand] = {
     logger.info("Inside get")
-    Future.successful(UserLogResult(UserLog(UUID.randomUUID().toString, "Patte", Some(DateTime.now.toString()), Some("Some looooog")), replyTo))
+    readFileAsClass(s"/$id.json").map(_.map(UserLogResult(_, replyTo)).getOrElse(NoUserLog(replyTo)))
   }
 
   override def getAll(replyTo: ActorRef[UserLogReplay]): Future[UserManagementApi.BaseLogCommand] = {
     logger.info("Inside get all")
-    Future.successful(UserLogMultiResult(Seq(UserLog(UUID.randomUUID().toString, "Patte", Some(DateTime.now.toString()), Some("Some looooog"))), replyTo))
+
+    for {
+      listOfFiles <- readJsonFileNames
+      appendedFiles = listOfFiles.map(file => s"/$file")
+      _ = {
+        logger.debug(s"List of json files found: $appendedFiles")
+      }
+      logs <- Future.sequence(appendedFiles.map(readFileAsClass(_))).map(_.flatten)
+    } yield  if (logs.nonEmpty) UserLogMultiResult(logs, replyTo) else NoUserLog(replyTo)
   }
 
   override def post(user: UserLogCreation, replyTo: ActorRef[UserLogReplay]): Future[UserManagementApi.BaseLogCommand] = {
     logger.info("Inside post")
     val newUser = user.toUser
-    writeToFile(newUser.userName, newUser.asJson.noSpaces).map(_ => UserLogResult(newUser, replyTo))
+    writeToFile(newUser.id, newUser.asJson.noSpaces).map(_ => UserLogResult(newUser, replyTo))
   }
 }

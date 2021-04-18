@@ -73,13 +73,12 @@ class EndpointApi(fileName: String)(implicit ec: ExecutionContext) extends FileO
 
   override def getAll(replyTo: ActorRef[Replay]): Future[BaseCommand] = {
     logger.info("Inside get all")
-    //Future.successful(Seq(Endpoints("path/to/stuff", Iterable("my", "stuff"), Iterable("Get", "Post")), Endpoints("path/to/givers", Iterable("1234", "6543"), Iterable("Get", "Put")) ))
     getAllInternal.map(MultiResultRouting(_, replyTo))
   }
 
-  private def getAllInternal: Future[Seq[RouteEndpoints]] = readFileAsClass(fileName).map { rr =>
-    println(rr.map(x => x.pathBindings))
-    rr
+  private def getAllInternal: Future[Seq[RouteEndpoints]] = readFileAsIterableClass(fileName).map { routingEndpoints =>
+    logger.debug(s"${routingEndpoints.map(_.pathBindings)}")
+    routingEndpoints
   }
 
   override def post(toCreate: String, replyTo: ActorRef[Replay]): Future[BaseCommand] = Future.successful(NoRoutingPoints(replyTo))

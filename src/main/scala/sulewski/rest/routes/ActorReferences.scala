@@ -1,7 +1,8 @@
 package sulewski.rest.routes
 
 import akka.actor.typed.ActorRef
-import sulewski.rest.domain.{EndpointApi, UserManagementApi}
+import sulewski.rest.domain.{EndpointApi, ServerInfoApi, UserManagementApi}
 
 final case class ActorReferences(endpointRegistryActor: ActorRef[EndpointApi.BaseCommand],
-                                 userRegistryActor: ActorRef[UserManagementApi.BaseLogCommand])
+                                 userLogRegistryActor: ActorRef[UserManagementApi.BaseLogCommand],
+                                 serverInfoRegistryActor: ActorRef[ServerInfoApi.ServerInfoBaseCommand])

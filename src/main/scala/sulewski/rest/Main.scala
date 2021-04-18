@@ -6,7 +6,7 @@ import akka.actor.typed.{ActorSystem, DispatcherSelector}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.StrictLogging
 import sulewski.rest.connectors.FileOperator
-import sulewski.rest.domain.{EndpointApi, UserManagementApi}
+import sulewski.rest.domain.{EndpointApi, ServerInfoApi, UserManagementApi}
 import sulewski.rest.entities.RouteEndpoints
 import sulewski.rest.routes.{ActorReferences, RestRoute}
 import sulewski.rest.routes.RestRoute.RouteConfig
@@ -33,7 +33,10 @@ object Main extends StrictLogging {
       val userRegistryActor = context.spawn(UserManagementApi()(dispatcherFromContext(context)), "UserRegistryActor")
       context.watch(userRegistryActor)
 
-      val references = ActorReferences(endpointRegistryActor, userRegistryActor)
+      val serverInfoRegistryActor = context.spawn(ServerInfoApi()(dispatcherFromContext(context)), "ServerInfoRegistryActor")
+      context.watch(serverInfoRegistryActor)
+
+      val references = ActorReferences(endpointRegistryActor, userRegistryActor, serverInfoRegistryActor)
 
       logger.info(s"Will be creating endpoint for paths: ${apis.map(_.pathBindings)}")
       val routes = RestRoute.apply(routeConfig, apis, references)(dispatcherFromContext(context), context.system)
@@ -52,6 +55,6 @@ object Main extends StrictLogging {
   def getApiEndpoints(config: Config)(implicit ec: ExecutionContext):Seq[RouteEndpoints] = {
     val routeConf = RouteConfig(config)
     val parser = new FileOperator[RouteEndpoints] {}
-    Await.result(parser.readFileAsClass(routeConf.fileName), AtMost)
+    Await.result(parser.readFileAsIterableClass(routeConf.fileName), AtMost)
   }
 }
