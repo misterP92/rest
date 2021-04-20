@@ -8,6 +8,4 @@ trait HttpApi[T] {
 
   def getAll: Future[Seq[T]]
 
-
-
 }

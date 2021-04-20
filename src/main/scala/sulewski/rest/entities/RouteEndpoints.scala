@@ -5,12 +5,12 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 final case class RouteEndpoints(pathBinding: String,
-                          ids: Iterable[String],
-                          supportedMethods: Iterable[String]) {
+                                ids: Iterable[String],
+                                supportedMethods: Iterable[String]) {
   import RouteEndpoints._
   def pathBindings: Option[RouteEndpoints.PathBindings] = pathBinding.split(PathSeparator).tail.toList match {
     case Nil => None
-    case api :: pathRest => Some(RouteEndpoints.PathBindings(api, pathRest.mkString(PathSeparator)))
+    case api :: pathRest => Some(RouteEndpoints.PathBindings(api, pathRest))
     case _ => None
   }
 }
@@ -19,7 +19,7 @@ object RouteEndpoints {
   //private val ApiName: String = "api"
   private val PathSeparator: String = "/"
 
-  final case class PathBindings(api: String, pathToResource: String)
+  final case class PathBindings(api: String, pathToResource: List[String])
 
   object PathBindings {
     implicit val PathBindingsEq: Eq[PathBindings]           = Eq.fromUniversalEquals[PathBindings]
