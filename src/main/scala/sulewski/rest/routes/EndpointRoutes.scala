@@ -54,7 +54,7 @@ class EndpointRoutes(underlyingLogic: ActorRef[EndpointApi.BaseCommand])(implici
       decodeRequest {
         entity(as[RouteEndpoints]) { routeEndPoints =>
           system.tell(RootCommands.ReloadApp(Seq(routeEndPoints)))
-          complete(StatusCode.int2StatusCode(201), "{}")
+          complete(StatusCode.int2StatusCode(201), """{"report":"Success"}""")
         }
       }
     }
