@@ -5,6 +5,7 @@ import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.util.Timeout
+import sulewski.rest.Main.RootCommands
 import sulewski.rest.domain.UserManagementApi
 import sulewski.rest.domain.UserManagementApi.BaseLogCommand.{CreateUserLog, GetAllUserLogs, GetOneUserLog}
 import sulewski.rest.domain.UserManagementApi.{UserLogReplay, UserLogReplayOption, UserLogReplaySeq}
@@ -19,10 +20,10 @@ object UserManagement {
   private val UsersName: String = "users"
   private val OneUser: String = "fetchOne"
   private val UserNotAvailable: String = "User was not available for provided id"
-  def apply(underlyingLogic: ActorRef[UserManagementApi.BaseLogCommand])(implicit ec: ExecutionContext, system: ActorSystem[_]): UserManagement = new UserManagement(underlyingLogic)
+  def apply(underlyingLogic: ActorRef[UserManagementApi.BaseLogCommand])(implicit ec: ExecutionContext, system: ActorSystem[RootCommands]): UserManagement = new UserManagement(underlyingLogic)
 }
 
-class UserManagement(underlyingLogic: ActorRef[UserManagementApi.BaseLogCommand])(implicit ec: ExecutionContext, system: ActorSystem[_]) extends Router with Directives {
+class UserManagement(underlyingLogic: ActorRef[UserManagementApi.BaseLogCommand])(implicit ec: ExecutionContext, system: ActorSystem[RootCommands]) extends Router with Directives {
   import UserManagement._
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   implicit val timeout: Timeout = 3.seconds
@@ -36,8 +37,6 @@ class UserManagement(underlyingLogic: ActorRef[UserManagementApi.BaseLogCommand]
         case UserLogReplayOption(maybeUser) => maybeUser
       }.map(_.getOrElse(throw NotFoundException(UserNotAvailable)))
 
-      println(s"GOT RESULT AT hte end GET ONE    $result")
-
       complete(StatusCode.int2StatusCode(200), result)
     },
     post {
@@ -48,8 +47,7 @@ class UserManagement(underlyingLogic: ActorRef[UserManagementApi.BaseLogCommand]
             case UserLogReplayOption(maybeUser) => maybeUser
           }.map(_.getOrElse(throw NotFoundException(UserNotAvailable)))
 
-          println(s"GOT RESULT AT the end POST    $result")
-          complete(StatusCode.int2StatusCode(200), result)
+          complete(StatusCode.int2StatusCode(201), result)
         }
       }
     },
@@ -58,7 +56,6 @@ class UserManagement(underlyingLogic: ActorRef[UserManagementApi.BaseLogCommand]
         case UserLogReplaySeq(users) => users
         case UserLogReplayOption(maybeUser) => maybeUser.toSeq
       }
-      println(s"GOT RESULT AT hte end GET ALL    $result")
 
       complete(result)
     }

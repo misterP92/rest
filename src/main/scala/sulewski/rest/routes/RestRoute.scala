@@ -4,6 +4,7 @@ import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import com.typesafe.config.Config
+import sulewski.rest.Main.RootCommands
 import sulewski.rest.entities.RouteEndpoints
 
 import scala.concurrent.ExecutionContext
@@ -19,13 +20,14 @@ object RestRoute {
     def apply(config: Config): RouteConfig = new RouteConfig(Try(config.getString(FileNameConfigName)).toOption.getOrElse("/endpoints/Endpoints.json"))
   }
 
-  def apply(config: RouteConfig, routes: Seq[RouteEndpoints], references: ActorReferences)(implicit ec: ExecutionContext, system: ActorSystem[_]): RestRoute = new RestRoute(config, routes, references)
+  def apply(routes: Seq[RouteEndpoints], references: ActorReferences)(implicit ec: ExecutionContext, system: ActorSystem[RootCommands]): RestRoute =
+    new RestRoute(routes, references)
 }
 
-class RestRoute(config: RestRoute.RouteConfig, routes: Seq[RouteEndpoints], references: ActorReferences)(implicit ec: ExecutionContext, system: ActorSystem[_]) extends Router with Handlers {
+class RestRoute(routes: Seq[RouteEndpoints], references: ActorReferences)(implicit ec: ExecutionContext, system: ActorSystem[RootCommands]) extends Router with Handlers {
   import RestRoute._
 
-  private lazy val endpointRoutes: EndpointRoutes = EndpointRoutes(config.fileName, references.endpointRegistryActor)
+  private lazy val endpointRoutes: EndpointRoutes = EndpointRoutes(references.endpointRegistryActor)
   private lazy val userLogsRoutes: UserManagement = UserManagement(references.userLogRegistryActor)
   private lazy val serverInfoRoutes: ServerInfoRoutes = ServerInfoRoutes(references.serverInfoRegistryActor)
   private lazy val onDemandRoutes: OnDemandRouter = new OnDemandRouter(routes)

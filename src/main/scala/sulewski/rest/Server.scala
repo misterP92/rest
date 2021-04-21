@@ -6,6 +6,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import sulewski.rest.Main.RootCommands
 import sulewski.rest.exceptions.InternalServerException
 import sulewski.rest.routes.Router
 
@@ -14,11 +15,11 @@ import scala.util.{Failure, Success}
 
 object Server {
   private val StartingPoint: Int = 0
-  private val MaxAmountOfRetry: Int = 3
+  private val MaxAmountOfRetry: Int = 5
   private val HostName: String = "host"
   private val PortName: String = "port"
 
-  def apply(router: Router, config: ServerConfig)(implicit system: ActorSystem[_], ec: ExecutionContext): Server = {
+  def apply(router: Router, config: ServerConfig)(implicit system: ActorSystem[RootCommands], ec: ExecutionContext): Server = {
     new Server(router, config)(system, ec)
   }
 
@@ -29,7 +30,7 @@ object Server {
   }
 }
 
-class Server(router: Router, config: Server.ServerConfig)(implicit system: ActorSystem[_], ec: ExecutionContext) extends LazyLogging {
+class Server(router: Router, config: Server.ServerConfig)(implicit system: ActorSystem[RootCommands], ec: ExecutionContext) extends LazyLogging {
   import Server._
 
   def bind: Future[ServerBinding] = Http()(system).newServerAt(config.host, config.port).bindFlow(router.route)
