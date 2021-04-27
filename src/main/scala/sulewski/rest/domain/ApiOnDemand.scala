@@ -1,10 +1,14 @@
 package sulewski.rest.domain
+import akka.http.scaladsl.model.HttpEntity
+import akka.http.scaladsl.model.MediaTypes.`application/json`
+import io.circe.{Json, Printer}
+
 import scala.concurrent.{ExecutionContext, Future}
 
-class ApiOnDemand(implicit ec: ExecutionContext) extends HttpApi[String] {
-  override def get(id: String): Future[Option[String]] = getAll.map(_.find(_.equals(id)))
+class ApiOnDemand(implicit ec: ExecutionContext) extends HttpApi[Json] {
+  override def get(id: String): Future[Option[Json]] = Future.successful(io.circe.parser.parse("""{}""").toOption)
 
-  override def getAll: Future[Seq[String]] = {
-    Future.successful(Seq("IT WORKED", "Lorem ipsum"))
+  override def handle(responseBody: Json): Future[Json] = {
+    Future(responseBody)//.map{x => println(x); x}
   }
 }

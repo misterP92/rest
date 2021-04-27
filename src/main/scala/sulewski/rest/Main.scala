@@ -35,7 +35,6 @@ object Main extends StrictLogging {
       val routes = RestRoute.apply(apis, references)(system.dispatchers.lookup(DispatcherSelector.default()), system)
       val server = Server(routes, Server.ServerConfig(config))(system, system.dispatchers.lookup(DispatcherSelector.default()))
       server.bindWithRetry
-      logger.info(s"Will be creating endpoint for paths: ${apis.map(_.pathBindings)}")
       Behaviors.same
     case RootCommands.ReloadApp(routeEndPoints) =>
       logger.info(s"Reloading the application with new routes: $routeEndPoints")

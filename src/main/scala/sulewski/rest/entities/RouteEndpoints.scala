@@ -1,12 +1,12 @@
 package sulewski.rest.entities
 
 import cats.Eq
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 final case class RouteEndpoints(pathBinding: String,
                                 ids: Iterable[String],
-                                supportedMethods: Iterable[String]) {
+                                supportedMethods: Map[String, Json]) {
   import RouteEndpoints._
   def pathBindings: Option[RouteEndpoints.PathBindings] = pathBinding.split(PathSeparator).tail.toList match {
     case Nil => None
@@ -16,7 +16,6 @@ final case class RouteEndpoints(pathBinding: String,
 }
 
 object RouteEndpoints {
-  //private val ApiName: String = "api"
   private val PathSeparator: String = "/"
 
   final case class PathBindings(api: String, pathToResource: List[String])

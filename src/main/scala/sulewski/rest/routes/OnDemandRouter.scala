@@ -1,7 +1,9 @@
 package sulewski.rest.routes
 
+import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.StrictLogging
+import io.circe.Json
 import sulewski.rest.domain.ApiOnDemand
 import sulewski.rest.entities.RouteEndpoints
 import sulewski.rest.entities.RouteEndpoints.PathBindings
@@ -41,31 +43,32 @@ class OnDemandRouter(routes: Seq[RouteEndpoints])(implicit ec: ExecutionContext)
   }
 
   @tailrec
-  private def routeMethods(supportedMethods: List[String], binding: PathBindings, maybeRoute: Option[Route]): Route =
+  private def routeMethods(supportedMethods: List[(String, Json)], binding: PathBindings, maybeRoute: Option[Route]): Route =
     supportedMethods match {
       case Nil => maybeRoute.getOrElse(throw CannotCreateDynamicRoutesError)
-      case "Get" :: tail =>
+      case ("Get", jsonValue) :: tail =>
         val pathEndGet = get {
           logger.info(s"Biding get request")
-          complete(brains.getAll)
+          complete(StatusCode.int2StatusCode(200), brains.handle(jsonValue))
         }
+
         routeMethods(tail, binding, bindPaths(binding, pathEndGet, maybeRoute))
-      case "Post" :: tail =>
+      case ("Post", jsonValue) :: tail =>
         val pathEndPost = post {
           logger.info(s"Biding post request")
-          complete(brains.getAll)
+          complete(brains.handle(jsonValue))
         }
         routeMethods(tail, binding, bindPaths(binding, pathEndPost, maybeRoute))
-      case "Put" :: tail =>
+      case ("Put", jsonValue) :: tail =>
         val pathEndPut = put {
           logger.info(s"Biding put request")
-          complete(brains.getAll)
+          complete(brains.handle(jsonValue))
         }
         routeMethods(tail, binding, bindPaths(binding, pathEndPut, maybeRoute))
-      case "Patch" :: tail =>
+      case ("Patch", jsonValue) :: tail =>
         val pathEndPatch = patch {
           logger.info(s"Biding patch request")
-          complete(brains.getAll)
+          complete(brains.handle(jsonValue))
         }
         routeMethods(tail, binding, bindPaths(binding, pathEndPatch, maybeRoute))
       case _ :: tail => routeMethods(tail, binding, maybeRoute)

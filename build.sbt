@@ -38,6 +38,8 @@ libraryDependencies ++= Seq(
 dockerBaseImage := "armhf/openjdk:8-jre-alpine"
 dockerRepository := Some("patte")
 
+packageName in Docker := "sulewski-akka-http-rest"
+
 enablePlugins(JavaAppPackaging)
 enablePlugins(DockerPlugin)
 enablePlugins(AshScriptPlugin)

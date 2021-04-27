@@ -6,10 +6,23 @@
       "5678",
       "1133"
     ],
-    "supportedMethods": [
-      "Get",
-      "Post"
-    ]
+    "supportedMethods": {
+      "Get": {
+        "bar": "baz",
+        "foo": [
+          "one",
+          "two"
+        ]
+      },
+      "Post": {
+        "received": "user",
+        "methods": [
+          "hej",
+          "vv"
+        ],
+        "isReal": true
+      }
+    }
   },
   {
     "pathBinding": "/hapi/v2/subscription/user",
@@ -18,9 +31,22 @@
       "5545",
       "8888"
     ],
-    "supportedMethods": [
-      "Get",
-      "Put"
-    ]
+    "supportedMethods": {
+      "Get": {
+        "bar": "baz",
+        "foo": [
+          "one",
+          "two"
+        ]
+      },
+      "Put": {
+        "received": "user",
+        "methods": [
+          "hej",
+          "vv"
+        ],
+        "isReal": true
+      }
+    }
   }
 ]
