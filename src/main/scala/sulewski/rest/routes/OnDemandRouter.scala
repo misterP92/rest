@@ -1,10 +1,10 @@
 package sulewski.rest.routes
 
 import akka.http.scaladsl.model.StatusCode
-import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.server.{Directives, Route, StandardRoute}
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
-import sulewski.rest.domain.ApiOnDemand
+import sulewski.rest.domain.{ApiOnDemand, HpRequest}
 import sulewski.rest.entities.RouteEndpoints
 import sulewski.rest.entities.RouteEndpoints.PathBindings
 import sulewski.rest.exceptions.InternalServerException
@@ -13,6 +13,7 @@ import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 
 object OnDemandRouter {
+  private val EmptyString: String = ""
   private val CannotCreateDynamicRoutes: String = "Could not create dynamic routes"
   private val CannotCreateDynamicRoutesError = InternalServerException(CannotCreateDynamicRoutes)
 }
@@ -32,50 +33,60 @@ class OnDemandRouter(routes: Seq[RouteEndpoints])(implicit ec: ExecutionContext)
         recRoute(rTail, route.map(_ ~ pathBindIngRoute).orElse(Some(pathBindIngRoute)))
     }
 
-  private def bindPaths(binding: PathBindings, pathEnd: Route, alreadyDefinedRoute: Option[Route]): Option[Route] = {
+  private def bindPaths(binding: PathBindings, idInPath: Option[String], pathEnd: Route, alreadyDefinedRoute: Option[Route]): Option[Route] = {
+    val logAndBindPath: (String, Route) => Route = (pathPart, theRoute) => {
+      logger.info(s"Biding $pathPart with [$theRoute] ")
+      pathPrefix(pathPart) { theRoute }
+    }
+
     val newBinding = pathPrefix(binding.api) {
       logger.info(s"Biding api [${binding.api}] ")
-      binding.pathToResource.foldRight(pathEnd){ (one, two) =>
-        logger.info(s"Biding $one with [$two] ")
-        pathPrefix(one) { two } }
+      binding.pathToResource.foldRight(pathEnd) {
+        case ("#id#", two) => logAndBindPath(idInPath.getOrElse(EmptyString), two)
+        case (one, two) => logAndBindPath(one, two)
+      }
     }
     if(alreadyDefinedRoute.nonEmpty) alreadyDefinedRoute.map(_ ~ newBinding) else Some(newBinding)
   }
 
-  @tailrec
-  private def routeMethods(supportedMethods: List[(String, Json)], binding: PathBindings, maybeRoute: Option[Route]): Route =
-    supportedMethods match {
-      case Nil => maybeRoute.getOrElse(throw CannotCreateDynamicRoutesError)
-      case ("Get", jsonValue) :: tail =>
-        val pathEndGet = get {
-          logger.info(s"Biding get request")
-          complete(StatusCode.int2StatusCode(200), brains.handle(jsonValue))
-        }
-
-        routeMethods(tail, binding, bindPaths(binding, pathEndGet, maybeRoute))
-      case ("Post", jsonValue) :: tail =>
-        val pathEndPost = post {
-          logger.info(s"Biding post request")
-          complete(brains.handle(jsonValue))
-        }
-        routeMethods(tail, binding, bindPaths(binding, pathEndPost, maybeRoute))
-      case ("Put", jsonValue) :: tail =>
-        val pathEndPut = put {
-          logger.info(s"Biding put request")
-          complete(brains.handle(jsonValue))
-        }
-        routeMethods(tail, binding, bindPaths(binding, pathEndPut, maybeRoute))
-      case ("Patch", jsonValue) :: tail =>
-        val pathEndPatch = patch {
-          logger.info(s"Biding patch request")
-          complete(brains.handle(jsonValue))
-        }
-        routeMethods(tail, binding, bindPaths(binding, pathEndPatch, maybeRoute))
-      case _ :: tail => routeMethods(tail, binding, maybeRoute)
+  private def routeMethods(binding: PathBindings, pathIds: Iterable[String], maybeRouteToUse: Option[Route], toRoute: Map[RouteEndpoints.HttpMethod, Json]): Route = {
+    def logAndHandleMessage: (String, Json) => StandardRoute = (loggerMsg, jsonValue) => {
+      logger.info(loggerMsg)
+      val hpResponse = brains.handle(HpRequest(jsonValue))
+      complete(hpResponse.map(_.asJsString)) // complete(StatusCode.int2StatusCode(200), brains.handle(jsonValue))
     }
 
+    def mountRoutes: (Option[Route], Route) => Option[Route] = (mountedRoutes, endRoute) => {
+      if(pathIds.nonEmpty) {
+        pathIds.foldLeft(mountedRoutes) { (restOfRoutes, idInPath) => bindPaths(binding, Some(idInPath), endRoute, restOfRoutes) }
+      } else bindPaths(binding, None, endRoute, mountedRoutes)
+    }
+
+    @tailrec
+    def inner(maybeRoute: Option[Route], listToRoute: List[(RouteEndpoints.HttpMethod, Json)]): Route = {
+      listToRoute match {
+        case Nil => maybeRoute.getOrElse(throw CannotCreateDynamicRoutesError)
+        case (RouteEndpoints.HttpMethod.GetMethod, jsonValue) :: tail =>
+          val pathEndGet = get { logAndHandleMessage("Biding get request", jsonValue) }
+          inner(mountRoutes(maybeRoute, pathEndGet), tail)
+        case (RouteEndpoints.HttpMethod.PostMethod, jsonValue) :: tail =>
+          val pathEndPost = post { logAndHandleMessage("Biding post request", jsonValue) }
+          inner(mountRoutes(maybeRoute, pathEndPost), tail)
+        case (RouteEndpoints.HttpMethod.PutMethod, jsonValue) :: tail =>
+          val pathEndPut = put { logAndHandleMessage("Biding put request", jsonValue) }
+          inner(mountRoutes(maybeRoute, pathEndPut), tail)
+        case (RouteEndpoints.HttpMethod.PatchMethod, jsonValue) :: tail =>
+          val pathEndPatch = patch { logAndHandleMessage("Biding patch request", jsonValue) }
+          inner(mountRoutes(maybeRoute, pathEndPatch), tail)
+        case _ :: tail => inner(maybeRoute, tail)
+      }
+    }
+
+    inner(maybeRouteToUse, toRoute.toList)
+  }
+
   private def oneRoute(oneEndpoint: RouteEndpoints): Route = oneEndpoint.pathBindings match {
-    case Some(bindings) => routeMethods(oneEndpoint.supportedMethods.toList, bindings, None)
+    case Some(bindings) => routeMethods(bindings, oneEndpoint.ids, None, oneEndpoint.supportedMethods)
     case None => throw InternalServerException("Failed during routing")
   }
 

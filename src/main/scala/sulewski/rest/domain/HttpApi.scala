@@ -4,10 +4,10 @@ import io.circe.Json
 
 import scala.concurrent.Future
 
-trait HttpApi[T] {
+trait HttpApi[X, Y] {
 
-  def get(id: String): Future[Option[T]]
+  def get(id: String): Future[Option[Y]]
 
-  def handle(responseBody: Json): Future[T]
+  def handle(responseBody: X): Future[Y]
 
 }

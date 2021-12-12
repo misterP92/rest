@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.util.Timeout
 import sulewski.rest.Main.RootCommands
 import sulewski.rest.domain.EndpointApi
-import sulewski.rest.domain.EndpointApi.BaseCommand.{GetAll, GetOne}
+import sulewski.rest.domain.EndpointApi.BaseCommand.{GetAll, GetOne, ReplaceCurrent}
 import sulewski.rest.domain.EndpointApi.{Replay, ReplayOption, ReplaySeq}
 import sulewski.rest.entities.RouteEndpoints
 import sulewski.rest.entities.RouteEndpoints._
@@ -53,6 +53,7 @@ class EndpointRoutes(underlyingLogic: ActorRef[EndpointApi.BaseCommand])(implici
     path("reloadRoutes") {
       decodeRequest {
         entity(as[RouteEndpoints]) { routeEndPoints =>
+          underlyingLogic.tell(ReplaceCurrent(routeEndPoints))
           system.tell(RootCommands.ReloadApp(Seq(routeEndPoints)))
           complete(StatusCode.int2StatusCode(201), """{"report":"Success"}""")
         }

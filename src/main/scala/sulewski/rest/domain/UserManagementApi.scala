@@ -80,7 +80,7 @@ object UserManagementApi {
 }
 
 import io.circe.syntax._
-class UserManagementApi()(implicit ec: ExecutionContext) extends HttpApiAkka[UserManagementApi.BaseLogCommand, UserLogCreation, UserManagementApi.UserLogReplay] with FileOperator[UserLog] {
+class UserManagementApi()(implicit ec: ExecutionContext) extends HttpAkkaApi[UserManagementApi.BaseLogCommand, UserLogCreation, UserManagementApi.UserLogReplay] with FileOperator[UserLog] {
   import UserManagementApi.BaseLogCommand._
   import UserManagementApi._
 
@@ -91,15 +91,12 @@ class UserManagementApi()(implicit ec: ExecutionContext) extends HttpApiAkka[Use
 
   override def getAll(replyTo: ActorRef[UserLogReplay]): Future[UserManagementApi.BaseLogCommand] = {
     logger.info("Inside get all")
-
     for {
       listOfFiles <- readJsonFileNames
       appendedFiles = listOfFiles.map(file => s"/$file")
-      _ = {
-        logger.debug(s"List of json files found: $appendedFiles")
-      }
+      _ = { logger.debug(s"List of json files found: $appendedFiles") }
       logs <- Future.sequence(appendedFiles.map(readFileAsClass(_))).map(_.flatten)
-    } yield  if (logs.nonEmpty) UserLogMultiResult(logs, replyTo) else NoUserLog(replyTo)
+    } yield if (logs.nonEmpty) UserLogMultiResult(logs, replyTo) else NoUserLog(replyTo)
   }
 
   override def post(user: UserLogCreation, replyTo: ActorRef[UserLogReplay]): Future[UserManagementApi.BaseLogCommand] = {

@@ -18,12 +18,14 @@ object FileOperator {
   val Appender: String = ""
 
   implicit class RichFile(file: File) {
-    def text: String = Source.fromFile(file)(Codec.UTF8).mkString
+    def text: String = {
+      val sourceOfFile = Source.fromFile(file)(Codec.UTF8)
+      try sourceOfFile.mkString finally sourceOfFile.close()
+    }
 
     def appendText(s: String) {
-      val out = new PrintWriter( file , "UTF-8")
-      try{ out.print( s ) }
-      finally{ out.close() }
+      val out = new PrintWriter(file, "UTF-8")
+      try { out.print( s ) } finally { out.close() }
     }
   }
 }

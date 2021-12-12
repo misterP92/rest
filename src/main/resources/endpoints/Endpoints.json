@@ -1,6 +1,6 @@
 [
   {
-    "pathBinding": "/dapi/v2/someRealPath",
+    "pathBinding": "/dapi/v2/someRealPath/#id#",
     "ids": [
       "1234",
       "5678",

@@ -15,7 +15,7 @@ import scala.util.{Failure, Success}
 
 object Server {
   private val StartingPoint: Int = 0
-  private val MaxAmountOfRetry: Int = 5
+  private val MaxAmountOfRetry: Int = 10
   private val HostName: String = "host"
   private val PortName: String = "port"
 

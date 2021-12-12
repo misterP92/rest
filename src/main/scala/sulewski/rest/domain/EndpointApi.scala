@@ -1,15 +1,15 @@
 package sulewski.rest.domain
 
-import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import com.typesafe.scalalogging.LazyLogging
 import sulewski.rest.connectors.FileOperator
 import sulewski.rest.entities.RouteEndpoints
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
-object EndpointApi extends LazyLogging {
+object EndpointApi extends LazyLogging with MessageHandler[EndpointApi.BaseCommand] {
   sealed trait BaseCommand
 
   sealed trait Replay
@@ -20,37 +20,33 @@ object EndpointApi extends LazyLogging {
     sealed trait CommandWithReply
     final case class GetAll(replyTo: ActorRef[Replay]) extends BaseCommand
     final case class GetOne(id: String, replyTo: ActorRef[Replay]) extends BaseCommand
+    final case class ReplaceCurrent(newEndpoints: RouteEndpoints) extends BaseCommand
 
     private[domain] final case class ResultRouting(user: RouteEndpoints, replyTo: ActorRef[Replay]) extends BaseCommand
     private[domain] final case class MultiResultRouting(user: Seq[RouteEndpoints], replyTo: ActorRef[Replay]) extends BaseCommand
     private[domain] final case class NoRoutingPoints(replyTo: ActorRef[Replay]) extends BaseCommand
+    private[domain] final case class AsyncAnswer(wasSuccessful: Boolean) extends BaseCommand
   }
 
-  def apply(fileName: String)(implicit ec: ExecutionContext): Behavior[BaseCommand] = distribute(new EndpointApi(fileName))
+  def apply(fileName: String)(implicit ec: ExecutionContext): Behavior[BaseCommand] = distribute(new EndpointApi(fileName), handleAsync)
 
   import BaseCommand._
 
-  def distribute(api: EndpointApi)(implicit ec: ExecutionContext): Behavior[BaseCommand] = Behaviors.receive { (context, message) =>
+  private def distribute(api: EndpointApi, handleAsync: (ActorContext[BaseCommand], AsyncAnswer) => Behavior[BaseCommand])
+                        (implicit ec: ExecutionContext): Behavior[BaseCommand] = Behaviors.receive { (context, message) =>
     message match {
       case GetAll(replyTo) =>
-        context.pipeToSelf(api.getAll(replyTo)) {
-          case Success(value) => value
-          case Failure(exception) =>
-            context.log.info(s"Rceived exception in [GetAll] with message: ${exception.getMessage}", exception)
-            NoRoutingPoints(replyTo)
-        }
+        context.pipeToSelf(api.getAll(replyTo))(handlePipeToSelf("GetAll", context, () => NoRoutingPoints(replyTo)))
         Behaviors.same
       case GetOne(id, replyTo) =>
-        context.pipeToSelf(api.get(id, replyTo)) {
-          case Success(value) => value
-          case Failure(exception) =>
-            context.log.info(s"Rceived exception in [GetOne] with message: ${exception.getMessage}", exception)
-            NoRoutingPoints(replyTo)
-        }
+        context.pipeToSelf(api.get(id, replyTo))(handlePipeToSelf("GetOne", context, () => NoRoutingPoints(replyTo)))
         Behaviors.same
+      case ReplaceCurrent(endPoints) =>
+        context.pipeToSelf(api.postAsync(endPoints))(handlePipeToSelf("ReplaceCurrent", context, () => AsyncAnswer(false)))
+        Behaviors.same
+      case msg: AsyncAnswer => handleAsync(context, msg)
       case ResultRouting(routingEndpoint, replyTo) =>
         replyTo ! ReplayOption(Option(routingEndpoint))
-
         Behaviors.same
       case MultiResultRouting(routingEndPoints, replyTo) =>
         replyTo ! ReplaySeq(routingEndPoints)
@@ -60,9 +56,18 @@ object EndpointApi extends LazyLogging {
         Behaviors.same
     }
   }
+
+  private def handleAsync: (ActorContext[BaseCommand], AsyncAnswer) => Behavior[BaseCommand] = {
+    case (context, AsyncAnswer(true)) =>
+      context.log.debug("Successfully changed endpoint configuration in the database")
+      Behaviors.same
+    case (context, AsyncAnswer(false)) =>
+      context.log.error("Was not able to change the endpoint configuration in the database, restart will change endpoint to default")
+      Behaviors.same
+  }
 }
 
-class EndpointApi(fileName: String)(implicit ec: ExecutionContext) extends FileOperator[RouteEndpoints] with HttpApiAkka[EndpointApi.BaseCommand, String, EndpointApi.Replay] with LazyLogging {
+class EndpointApi(fileName: String)(implicit ec: ExecutionContext) extends FileOperator[RouteEndpoints] with HttpAkkaApi[EndpointApi.BaseCommand, RouteEndpoints, EndpointApi.Replay] with LazyLogging {
   import EndpointApi.BaseCommand._
   import EndpointApi._
 
@@ -81,5 +86,12 @@ class EndpointApi(fileName: String)(implicit ec: ExecutionContext) extends FileO
     routingEndpoints
   }
 
-  override def post(toCreate: String, replyTo: ActorRef[Replay]): Future[BaseCommand] = Future.successful(NoRoutingPoints(replyTo))
+  override def post(toCreate: RouteEndpoints, replyTo: ActorRef[Replay]): Future[BaseCommand] = Future.successful(NoRoutingPoints(replyTo))
+
+  def postAsync(toCreate: RouteEndpoints): Future[BaseCommand] = {
+    println(toCreate)
+    println("Will change the file name: ")
+    println(fileName)
+    Future.successful(AsyncAnswer(true))
+  }
 }

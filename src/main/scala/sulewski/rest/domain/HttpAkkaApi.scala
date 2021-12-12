@@ -4,7 +4,7 @@ import akka.actor.typed.ActorRef
 
 import scala.concurrent.Future
 
-trait HttpApiAkka[T, U, A] {
+trait HttpAkkaApi[T, U, A] {
 
   def get(id: String, replyTo: ActorRef[A]): Future[T]
 

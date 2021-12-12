@@ -1,7 +1,6 @@
 package sulewski.rest.domain
 
 import java.lang.management.ManagementFactory
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
 import sulewski.rest.entities.ServerInfo
@@ -10,7 +9,7 @@ import sulewski.rest.exceptions.{InternalServerException, RestEndpointException}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-object ServerInfoApi {
+object ServerInfoApi extends MessageHandler[ServerInfoApi.ServerInfoBaseCommand] {
   private val ServerName: String = "Pattes Server ©"
   private val StartAccessedTimes: Int = 0
   sealed trait ServerInfoReplay

@@ -1,6 +1,6 @@
 name := "sulewski.rest"
 
-version := "0.1"
+version := "0.1.0"
 
 scalaVersion := "2.12.8"
 
@@ -16,7 +16,6 @@ val akkaRevision = "2.6.6"
 libraryDependencies ++= Seq(
   "com.typesafe.akka"          %% "akka-http"            % akkaHttpRevision,
   "com.typesafe.akka"          %% "akka-http-spray-json" % akkaHttpRevision,
-  "com.typesafe.akka"          %% "akka-stream"          % "2.5.12", 
   "com.typesafe.akka"          %% "akka-stream"          % akkaRevision, 
   "com.typesafe.akka"          %% "akka-actor-typed"     % akkaRevision,
   "org.typelevel"              %% "cats-core"            % catsRevision,
@@ -26,6 +25,7 @@ libraryDependencies ++= Seq(
   "io.circe"                   %% "circe-parser"         % circeRevision,
   "io.circe"                   %% "circe-generic"        % circeRevision,
   "io.circe"                   %% "circe-generic-extras" % circeRevision,
+  "com.typesafe.play"          %% "play-json"            % "2.9.2",
   "ch.qos.logback"             % "logback-classic"       % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging"        % "3.9.0",
   "de.heikoseeberger"          %% "akka-http-circe"      % "1.21.0",
